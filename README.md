@@ -6,7 +6,7 @@ and links to a series of Youtube training videos.
 
 The Clojure build tool [Leiningen](https://leiningen.org/) is used.
 
-A brief introduction to the GUI, including using a pre-built docker image, is available [here](docs/EdgeXpertManager.rst).
+A brief introduction to the GUI, including using a pre-built docker image, is available [here](docs/Manager.rst).
 
 The UI was developed using CSS from the commercial version of [Creative Tim](https://www.creative-tim.com/)'s Light
 Bootstrap Dashboard for Bootstrap 3. Note that the commercial version is now for Bootstrap 4.
