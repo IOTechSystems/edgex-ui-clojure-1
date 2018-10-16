@@ -207,7 +207,8 @@ The Manager provides the capability to add, edit and delete EdgeX addressables.
 Troubleshooting
 ===============
 
-The Manager contains a facility whereby the state of the tool can be captured and exported to a file. This data can be used by adeveloper to replay the user's actions and see the internal state of the tool. Please see the Fulcro documentation for more details.
+The Manager contains a facility whereby the state of the tool can be captured and exported to a file. This data can be used by a developer to replay the user's actions and see the internal state of the tool. Please see the Fulcro documentation for more details.
+
 .. image:: ManagerSupportData.png
    :height: 500 px
    :width: 700 px
