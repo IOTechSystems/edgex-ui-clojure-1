@@ -64,7 +64,8 @@
   (action [{:keys [state]}]
           (swap! state (fn [s] (-> s
                                    (set-set-modal-target* id)
-                                   (validate-set-command*))))))
+                                   (validate-set-command*)))))
+  (refresh [env] [:value-descriptor :set-command-modal]))
 
 (defmutation validate-set-command
   [{:keys [none]}]
@@ -152,12 +153,12 @@
            {:modal (prim/get-query b/Modal)}]}
   (let [name (:name target)
         paramNames (into #{} (-> target :put :parameterNames))
-        params (filter #(paramNames (:name %)) (:value-descriptors target))
+        params (filter #(-> % :name paramNames) (:value-descriptors target))
         url (-> target :put :url)]
     (b/ui-modal modal
                 (b/ui-modal-title nil
                                   (dom/div #js {:key "title"
-                                                :style #js {:fontSize "22px"}} "Set Value Command"))
+                                                :style #js {:fontSize "22px"}} (str "Set " name)))
                 (b/ui-modal-body nil
                                  (dom/div #js {:className "swal2-icon swal2-warning" :style #js {:display "block"}} "!")
                                  (dom/div #js {:className "card"}
@@ -185,7 +186,8 @@
 (defsc CommandListEntry
        [this {:keys [id type pos size name value value-descriptors put]} {:keys [onSet]}]
        {:ident (fn [] [:command (str id "-" pos)])
-        :query [:id :type :pos :size :name :value :value-descriptors :put]}
+        :query [:id :type :pos :size :name :value :put
+                {:value-descriptors (prim/get-query CommandPut)}]}
        (let [[vdid val] value
              descriptor (-> (filter #(= (:name %) vdid) value-descriptors) first)
              label (:uomLabel descriptor)

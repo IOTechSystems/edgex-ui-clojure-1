@@ -19,7 +19,8 @@
                            mode-str (e/key-to-string mode)]
                        (timbre/info "set admin state: device" id "mode" mode)
                        (http/put (str "http://" (:command @e/endpoints)
-                                      "/api/v1/device/" id-str "/adminstate/" mode-str)))))
+                                      "/api/v1/device/" id-str "/adminstate/" mode-str))
+                       id)))
 
 (defmutation upload-profile
              [{:keys [file-id]}]
@@ -66,7 +67,7 @@
             {::prim/tempids {tempid (-> (e/edgex-post :metadata "addressable" addressable) :body keyword)}})))
 
 (defmutation edit-addressable
-  [{:keys [id url protocol address port path method publisher topic user password]}]
+  [{:keys [id protocol address port path method publisher topic user password]}]
   (action [{:keys [state]}]
           (let [a {:id (e/key-to-string id)
                    :address address
@@ -81,7 +82,6 @@
                    :protocol protocol
                    :publisher publisher
                    :topic topic
-                   :url url
                    :user user}]
             (timbre/info "edit addressable" a)
             (e/edgex-put :metadata "addressable" a)

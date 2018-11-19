@@ -91,7 +91,8 @@
   (action [{:keys [state]}]
     (swap! state (fn [state-map]
                    (-> state-map
-                       (initialize-form EditAddressableModal [type id]))))))
+                       (initialize-form EditAddressableModal [type id])))))
+  (refresh [env] [:edit-addressable]))
 
 (defn show-edit-modal [comp type id]
   (prim/transact! comp `[(prepare-edit-modal {:type ~type :id ~id})

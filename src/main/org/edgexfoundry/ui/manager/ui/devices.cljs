@@ -127,19 +127,42 @@
           (swap! state (fn [s] (-> s
                                    set-new-device-data*)))))
 
-(defn move-value-descriptors* [state]
-  (let [add-val-desc (fn [state vd] (assoc-in state [:value-descriptor (:id vd)] vd))
-        add-desc (fn [state cmd] (reduce add-val-desc state (:value-descriptors cmd)))
-        ref (fn [d] [:value-descriptor (:id d)])
-        refs #(mapv ref (:value-descriptors %))
-        ref-descs (fn [state cmd] (assoc-in state [:command (:id cmd) :value-descriptors] (refs cmd)))
-        cmds (-> state :command vals)
-        cmds-with-descs (reduce add-desc state cmds)]
-    (reduce ref-descs cmds-with-descs cmds)))
+(defn load-commands* [state device-id]
+  (let [profile-id (get-in state [:device device-id :profile :id])]
+    (-> state
+        (assoc-in (conj co/command-list-ident :source-device) device-id)
+        (assoc-in (conj co/command-list-ident :source-profile) [:device-profile profile-id]))))
 
-(defmutation move-value-descriptors [none]
+(defn add-value-descriptor* [state device-id]
+  (let [profile-id (get-in state [:device device-id :profile :id])
+        device-resources (get-in state [:device-profile profile-id :deviceResources])
+        mk-vd (fn [dr] (let [name (:name dr)
+                             pv (get-in dr [:properties :value])]
+                         [name {:id name
+                                :type :value-descriptor
+                                :name name
+                                :defaultValue (-> pv :defaultValue)
+                                :descripiton (-> dr :description)
+                                :formatting "%s"
+                                :min (or (-> pv :minimum) "")
+                                :max (or (-> pv :maximum) "")
+                                :value-type (-> pv :type first)
+                                :uomLabel (-> dr :properties :units :defaultValue)}]))
+        vds (into {} (mapv mk-vd device-resources))]
+    (-> state
+        (assoc :value-descriptor vds))))
+
+(defn add-value-descriptor-refs* [state]
+  (let [vds (-> state :value-descriptor vals)
+        mkref (fn [v] [:value-descriptor (:id v)])
+        vd-refs (mapv #(vector :value-descriptor (:id %)) vds)
+        add-refs (fn [s id] (assoc-in s [:command id :value-descriptors] vd-refs))]
+    (reduce add-refs state (-> state :command keys))))
+
+(defmutation add-value-descriptor-refs [nokeys]
   (action [{:keys [state]}]
-          (swap! state move-value-descriptors*)))
+          (swap! state (fn [s] (-> s
+                                   add-value-descriptor-refs*)))))
 
 (defmutation load-commands
   [{:keys [id]}]
@@ -147,8 +170,10 @@
           (df/load-action env :q/edgex-commands cmds/CommandListEntry
                           {:target (conj co/command-list-ident :commands)
                            :params {:id id}
-                           :post-mutation `move-value-descriptors})
-          (swap! state (fn [s] (assoc-in s (conj co/command-list-ident :source-device) id))))
+                           :post-mutation `add-value-descriptor-refs})
+          (swap! state (fn [s] (-> s
+                                   (load-commands* id)
+                                   (add-value-descriptor* id)))))
   (remote [env] (df/remote-load env)))
 
 (defn do-delete-device [this id]

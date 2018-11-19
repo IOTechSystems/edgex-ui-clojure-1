@@ -22,27 +22,17 @@
   (let [result (->> gd :url http/get :body json/read-str (into []))]
     result))
 
-(defn add-vd [c]
-  (let [get-expected (fn [c] (or (-> (filter #(= (:code %) "200") (-> c :get :responses)) first :expectedValues) []))
-        get-param (fn [c] (-> c :put :parameterNames))
-        expected (get-expected c)
-        params (get-param c)
-        required (distinct (concat expected params))
-        get-vd #(e/convert-value-descriptor (e/edgex-get-path :data (str "valuedescriptor/name/" %)))
-        descriptors (mapv get-vd required)]
-    (assoc c :value-descriptors descriptors)))
-
 (defn edgex-get-device-commands [id]
   (let [commands (mapv e/convert-command (get (e/edgex-get-path :command (str "device/" (subs (str id) 1))) "commands"))
         apply-get #(if (-> % :get :responses)
                      (update % :get getfn)
                      (assoc % :get [[(:name %) "N/A"]]))
-        add-vd-v #(-> (add-vd %) apply-get (set/rename-keys {:get :value}))
+        add-value #(-> % apply-get (set/rename-keys {:get :value}))
         split-values (fn [cd] (let [v (:value cd)
                                     c (count v)]
                                     (map-indexed (fn [idx item]
                                                    (-> cd (merge {:value item :pos idx :size c}))) v)))
-                      result (->> commands (mapv add-vd-v) (mapcat split-values) vec)]
+                      result (->> commands (mapv add-value) (mapcat split-values) vec)]
     result))
 
 (defn get-readings-in-time-range [ids coll start end limit]

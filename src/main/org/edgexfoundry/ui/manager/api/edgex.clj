@@ -26,22 +26,25 @@
 (defn key-to-string [k]
   (subs (str k) 1))
 
-(defn to-key [m k] (update-in m k keyword))
+(defn to-key [map ka] (reduce (fn [m k] (update-in m k keyword)) map ka))
+
+(defn convert-basic [s type]
+  (-> s
+      walk/keywordize-keys
+      (to-key [[:id]])
+      (assoc :type type)))
 
 (defn convert [d keys type]
   (-> d
-      walk/keywordize-keys
+      (convert-basic type)
       (select-keys keys)
-      (to-key [:id])
-      (to-key [:adminState])
-      (to-key [:operatingState])
-      (to-key [:service :adminState])
-      (to-key [:service :operatingState])
-      (assoc :type type)))
+      (to-key [[:id] [:adminState] [:operatingState] [:service :adminState] [:service :operatingState]])))
 
 (defn convert-device [d]
-  (-> (convert d [:id :description :adminState :operatingState :name :labels :service :profile :lastConnected :lastReported
-                  :profile :addressable] :device)
+  (-> d
+      (convert [:id :description :adminState :operatingState :name :labels :service :profile :lastConnected :lastReported
+                :profile :addressable] :device)
+      (to-key [[:profile :id]])
       (dissoc-in [:profile :deviceResources])
       (dissoc-in [:profile :commands])
       (dissoc-in [:profile :resources])))
@@ -49,17 +52,10 @@
 (defn convert-device-service [d]
   (-> d
       (convert [:id :adminState :operatingState :name :addressable :labels] :device-service)
-      (to-key [:addressable :id])))
+      (to-key [[:addressable :id]])))
 
-(defn convert-device-profile [d]
-  (convert d [:id :name :description :manufacturer :model :labels :modified] :device-profile))
-
-(defn convert-basic [s type]
-  (-> s
-      walk/keywordize-keys
-      ;(select-keys keys)
-      (to-key [:id])
-      (assoc :type type)))
+(defn convert-device-profile [p]
+  (convert-basic p :device-profile))
 
 (defn convert-addressable [a]
   (convert-basic a :addressable))
@@ -68,14 +64,13 @@
   (let [add-default (fn [s k] (assoc s k (or (get s k) 0)))]
     (-> s
         (convert-basic :schedule)
-        (to-key [:id])
         (add-default :start)
         (add-default :end))))
 
 (defn convert-schedule-event [s]
   (-> s
       (convert-basic :schedule-event)
-      (to-key [:addressable :id])))
+      (to-key [[:addressable :id]])))
 
 (defn convert-resource [r]
   (convert-basic r :resource))
@@ -101,10 +96,7 @@
 (defn convert-export [e]
   (-> (set/rename-keys e {"_id" "id"})
       (convert-basic :export)
-      (to-key [:destination])
-      (to-key [:format])
-      (to-key [:compression])
-      (to-key [:encryption :encryptionAlgorithm])))
+      (to-key [[:destination] [:format] [:compression] [:encryption :encryptionAlgorithm]])))
 
 (defonce endpoints (atom nil))
 

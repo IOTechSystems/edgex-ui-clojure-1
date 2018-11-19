@@ -32,12 +32,7 @@
                              :post "POST"
                              :put "PUT"
                              :delete "DELETE")
-                protocol-str (case protocol
-                               :http "HTTP"
-                               :mac "MAC"
-                               :tcp "TCP"
-                               :other "OTHER")
-                url (str protocol-str "://" address ":" port path)
+                url (str protocol "://" address ":" port path)
                 a {:created 0
                    :id tempid
                    :address address
@@ -49,7 +44,7 @@
                    :password password
                    :path path
                    :port port
-                   :protocol protocol-str
+                   :protocol protocol
                    :publisher publisher
                    :topic topic
                    :url url
@@ -63,9 +58,10 @@
   (remote [env] true))
 
 (defmutation edit-addressable
-  [{:keys [id url protocol address port path method publisher topic user password]}]
+  [{:keys [id protocol address port path method publisher topic user password]}]
   (action [{:keys [state]}]
-          (let [a {:id id
+          (let [url (str protocol "://" address ":" port path)
+                a {:id id
                    :address address
                    :method (case method
                              :get "GET"
@@ -75,11 +71,7 @@
                    :password password
                    :path path
                    :port port
-                   :protocol (case protocol
-                               :http "HTTP"
-                               :mac "MAC"
-                               :tcp "TCP"
-                               :other "OTHER")
+                   :protocol protocol
                    :publisher publisher
                    :topic topic
                    :url url
