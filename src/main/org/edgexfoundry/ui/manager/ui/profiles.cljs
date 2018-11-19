@@ -164,6 +164,7 @@
                                                       [:modified "Last Modified" #(co/conv-time %2)]]
           [{:onClick #(show-add-profile-modal this) :icon "plus"}
            {:onClick #(df/refresh! this {:fallback `d/show-error}) :icon "refresh"}]
+  :name-row-symbol ProfileListEntry
   :modals [{:modal d/DeleteModal :params {:modal-id :dp-modal} :callbacks {:onDelete do-delete-profile}}]
   :actions [{:title "View Device" :action-class :info :symbol "info" :onClick show-profile}
             {:title "Delete Profile" :action-class :danger :symbol "times" :onClick (d/mk-show-modal :dp-modal)}])
