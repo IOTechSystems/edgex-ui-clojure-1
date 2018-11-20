@@ -73,11 +73,11 @@ func (s Server) mutation(op *list.List, result map[transit.Symbol]interface{}) {
 	result[key] = s.InvokeMutatorFunc(key, args)
 }
 
-func (s Server) entityQuery(query *transit.CMap, result *transit.CMap) {
+func (s Server) entityQuery(query *transit.CMap, args map[interface{}]interface{}, result *transit.CMap) {
 	for _, e := range query.Entries {
 		key := e.Key.([]interface{})[0].(transit.Keyword)
 		params := e.Value.([]interface{})
-		result.Append(e.Key, s.InvokeQueryFunc(key, params, nil))
+		result.Append(e.Key, s.InvokeQueryFunc(key, params, args))
 	}
 }
 
@@ -112,7 +112,7 @@ func (s Server) SetupRouter() *gin.Engine {
 						if result == nil {
 							result = transit.NewCMap()
 						}
-						s.entityQuery(t, result.(*transit.CMap))
+						s.entityQuery(t, nil, result.(*transit.CMap))
 					case *list.List:
 						switch head := t.Front().Value.(type) {
 						case map[interface{}]interface{}:
@@ -121,6 +121,12 @@ func (s Server) SetupRouter() *gin.Engine {
 							}
 							args := t.Front().Next().Value.(map[interface{}]interface{})
 							s.rootQuery(head, args, result.(*transit.CMap))
+						case *transit.CMap:
+							if result == nil {
+								result = transit.NewCMap()
+							}
+							args := t.Front().Next().Value.(map[interface{}]interface{})
+							s.entityQuery(head, args, result.(*transit.CMap))
 						default:
 							if result == nil {
 								result = make(map[transit.Symbol]interface{})

@@ -32,6 +32,7 @@ func main() {
 	server.AddQueryFunc("show-profiles", edgex.ShowProfiles)
 	server.AddQueryFunc("show-devices", edgex.ShowDevices)
 	server.AddQueryFunc("show-addressables", edgex.ShowAddressables)
+	server.AddQueryFunc("show-logs", edgex.ShowLogs)
 	server.AddQueryFunc("reading-page", edgex.ReadingPage)
 	server.AddQueryFunc("endpoint", edgex.Endpoints)
 	server.AddMutationFunc("org.edgexfoundry.ui.manager.api.mutations/update-lock-mode", edgex.UpdateLockMode)

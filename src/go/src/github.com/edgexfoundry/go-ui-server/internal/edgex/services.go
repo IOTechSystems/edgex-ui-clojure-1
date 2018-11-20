@@ -165,7 +165,7 @@ func Commands(params []interface{}, args map[interface{}]interface{}) interface{
 func getReadingsInTimeRange(name string, from int64, to int64) interface{} {
 	const batchSize = 100
 	const maxRequests = 100
-	result := make([]interface{}, batchSize*maxRequests)
+	result := make([]interface{}, batchSize * maxRequests)
 	ids := make(map[string]bool)
 	pos := 0
 	limit := maxRequests
@@ -187,7 +187,7 @@ func getReadingsInTimeRange(name string, from int64, to int64) interface{} {
 			id := reading["id"].(string)
 			if !ids[id] {
 				ids[id] = true
-				result[pos] = reading
+				result[pos] = fulcro.MakeKeyword(reading, "id")
 				pos++
 			}
 		}
@@ -200,7 +200,7 @@ func DeviceReadings(params []interface{}, args map[interface{}]interface{}) inte
 	name := fulcro.GetString(args, "name")
 	from := fulcro.GetInt(args, "from")
 	to := fulcro.GetInt(args, "to")
-	return fulcro.Keywordize(fulcro.MakeKeyword(getReadingsInTimeRange(name, from, to), "id"))
+	return fulcro.Keywordize(getReadingsInTimeRange(name, from, to))
 }
 
 func Profiles(params []interface{}, args map[interface{}]interface{}) interface{} {
@@ -291,6 +291,45 @@ func ShowDevices(params []interface{}, args map[interface{}]interface{}) interfa
 func ShowAddressables(params []interface{}, args map[interface{}]interface{}) interface{} {
 	result := make(map[string]interface{})
 	result["content"] = getAddressables()
+	return fulcro.Keywordize(result)
+}
+
+func getLogsInTimeRange(from int64, to int64) interface{} {
+	const batchSize = 100
+	const maxRequests = 100
+	result := make([]interface{}, batchSize * maxRequests)
+	ids := make(map[transit.Keyword]bool)
+	pos := 0
+	limit := maxRequests
+	toStr := strconv.FormatInt(to, 10)
+	batchStr := strconv.FormatInt(batchSize, 10)
+	var count int
+	for ok := true; ok; ok = (count == batchSize) && (limit > 0) {
+		fromStr := strconv.FormatInt(from, 10)
+		resp, _ := resty.R().Get(getEndpoint(ClientLogging) + "logs/" + fromStr + "/" + toStr + "/" + batchStr)
+		var data []map[string]interface{}
+		json.Unmarshal(resp.Body(), &data)
+		logs := fulcro.AddId(fulcro.AddType(data, "log-entry")).([]map[string]interface{})
+		count = len(logs)
+		from = int64(logs[count-1]["created"].(float64))
+		for _, entry := range logs {
+			id := entry["id"].(transit.Keyword)
+			if !ids[id] {
+				ids[id] = true
+				result[pos] = entry
+				pos++
+			}
+		}
+		limit--
+	}
+	return result[:pos]
+}
+
+func ShowLogs(params []interface{}, args map[interface{}]interface{}) interface{} {
+	start := fulcro.GetInt(args, "start")
+	end := fulcro.GetInt(args, "end")
+	result := make(map[string]interface{})
+	result["content"] = getLogsInTimeRange(start, end)
 	return fulcro.Keywordize(result)
 }
 

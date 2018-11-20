@@ -34,7 +34,7 @@
 (declare show-logs)
 
 (deftable LogEntryList :show-logs :log-entry [[:created "Created" #(co/conv-time %2)] [:originService "Service"]
-                                              [:loglevel "Level"] [:message "Message"]]
+                                              [:logLevel "Level"] [:message "Message"]]
   [{:onClick #(show-logs this) :icon "refresh"}] :search-keyword :message
   :search {:comp LogSearch})
 

@@ -5,6 +5,7 @@
 package fulcro
 
 import (
+	"github.com/google/uuid"
 	"github.com/russolsen/transit"
 	"gopkg.in/resty.v1"
 )
@@ -90,6 +91,15 @@ func AddType(data interface{}, t string) interface{} {
 	result := data.([]map[string]interface{})
 	for i, _ := range result {
 		result[i]["type"] = transit.Keyword(t)
+	}
+	return result
+}
+
+func AddId(data interface{}) interface{} {
+	result := data.([]map[string]interface{})
+	for i, _ := range result {
+		id, _ := uuid.NewUUID()
+		result[i]["id"] = transit.Keyword(id.String())
 	}
 	return result
 }
